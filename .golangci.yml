@@ -1,0 +1,9 @@
+run:
+  skip-dirs-use-default: true
+linters:
+  enable:
+    - gofmt
+    - goimports
+linters-settings:
+  gofmt:
+    simplify: true
