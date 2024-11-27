@@ -23,6 +23,10 @@ Here is the example to create mock:
 
 ```
 mockgen -source=<source_file> -destination=<destination_file>
+
+mockgen -source=service/auth/auth.go -destination=test/mock/service/auth/auth.go
+mockgen -source=service/user/user.go -destination=test/mock/service/user/user.go
+mockgen -source=service/user/insert/insert.go -destination=test/mock/service/user/insert/insert.go
 ```
 
 ## migration
