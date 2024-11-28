@@ -1,4 +1,4 @@
-package service_user_insert_test
+package service_user_register_test
 
 import (
 	"context"
@@ -9,72 +9,72 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/prapsky/user_service/common/logger/zerolog"
-	svc "github.com/prapsky/user_service/service/user/insert"
+	svc "github.com/prapsky/user_service/service/user/register"
 	mock_auth_service "github.com/prapsky/user_service/test/mock/service/auth"
 	mock_user_service "github.com/prapsky/user_service/test/mock/service/user"
 )
 
-type InsertUserServiceTestSuite struct {
+type RegisterUserServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 	repo     *mock_user_service.MockUserRepository
 	authSvc  *mock_auth_service.MockAuthService
-	svc      svc.InsertUserUseCase
+	svc      svc.RegisterUserUseCase
 }
 
-func TestInsertUserServiceTestSuite(t *testing.T) {
-	suite.Run(t, new(InsertUserServiceTestSuite))
+func TestRegisterUserServiceTestSuite(t *testing.T) {
+	suite.Run(t, new(RegisterUserServiceTestSuite))
 }
 
-func (suite *InsertUserServiceTestSuite) BeforeTest(string, string) {
+func (suite *RegisterUserServiceTestSuite) BeforeTest(string, string) {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.repo = mock_user_service.NewMockUserRepository(suite.mockCtrl)
 	suite.authSvc = mock_auth_service.NewMockAuthService(suite.mockCtrl)
-	suite.svc = svc.NewInsertUserService(suite.repo, suite.authSvc, zerolog.NewZeroLog())
+	suite.svc = svc.NewRegisterUserService(suite.repo, suite.authSvc, zerolog.NewZeroLog())
 }
 
-func (suite *InsertUserServiceTestSuite) AfterTest(string, string) {
+func (suite *RegisterUserServiceTestSuite) AfterTest(string, string) {
 	defer suite.mockCtrl.Finish()
 }
 
-func (suite *InsertUserServiceTestSuite) TestNewInsertUserService() {
+func (suite *RegisterUserServiceTestSuite) TestNewRegisterUserService() {
 	suite.Run("successfully create a new instance", func() {
 		suite.NotNil(suite.svc)
 	})
 }
 
-func (suite *InsertUserServiceTestSuite) TestInsertUserService_Do() {
+func (suite *RegisterUserServiceTestSuite) TestRegisterUserService_Do() {
 	username := "ronaldo"
 	token := "secret-token"
 	userID := uint64(7)
 
 	suite.Run("error find user by username", func() {
 		suite.repo.EXPECT().FindByUsername(gomock.Any(), gomock.Any()).Return(uint64(0), errors.New("error"))
-		token, err := suite.svc.Do(context.TODO(), svc.InsertUserInput{Username: username})
+		token, err := suite.svc.Do(context.TODO(), svc.RegisterUserInput{Username: username})
 		suite.Error(err)
 		suite.Empty(token)
 	})
 
 	suite.Run("username already exists", func() {
 		suite.repo.EXPECT().FindByUsername(gomock.Any(), gomock.Any()).Return(userID, nil)
-		token, err := suite.svc.Do(context.TODO(), svc.InsertUserInput{Username: username})
+		token, err := suite.svc.Do(context.TODO(), svc.RegisterUserInput{Username: username})
 		suite.Error(err)
 		suite.Empty(token)
 	})
 
-	suite.Run("error insert user", func() {
+	suite.Run("error register user", func() {
 		suite.repo.EXPECT().FindByUsername(gomock.Any(), gomock.Any()).Return(uint64(0), nil)
 		suite.repo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(uint64(0), errors.New("some error"))
-		token, err := suite.svc.Do(context.TODO(), svc.InsertUserInput{Username: username})
+		token, err := suite.svc.Do(context.TODO(), svc.RegisterUserInput{Username: username})
 		suite.Error(err)
 		suite.Empty(token)
 	})
 
-	suite.Run("success insert", func() {
+	suite.Run("success register", func() {
 		suite.repo.EXPECT().FindByUsername(gomock.Any(), gomock.Any()).Return(uint64(0), nil)
 		suite.repo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(userID, nil)
 		suite.authSvc.EXPECT().CreateToken(gomock.Any()).Return(token, nil)
-		token, err := suite.svc.Do(context.TODO(), svc.InsertUserInput{Username: username})
+		token, err := suite.svc.Do(context.TODO(), svc.RegisterUserInput{Username: username})
 		suite.Nil(err)
 		suite.NotEmpty(token)
 	})
