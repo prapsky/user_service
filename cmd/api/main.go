@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	_ "github.com/lib/pq"
+
 	"github.com/indrasaputra/hashids"
 	"github.com/labstack/echo/v4"
 	"github.com/prapsky/user_service/common/config"
@@ -39,7 +41,7 @@ func main() {
 
 	e := echo.New()
 	e.POST("/register", userHandler.Register)
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.Start(":6666"))
 }
 func buildConfig(env string) *config.Config {
 	cfg, err := config.NewConfig(env)

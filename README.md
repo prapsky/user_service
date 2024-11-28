@@ -43,3 +43,28 @@ Here is the command to migrate:
 ```
 make migrate url="postgres://<db-username>:<db-password>@localhost:5432/<db-name>"
 ```
+
+## endpoints
+
+```
+POST - /register
+```
+
+Request body
+
+```
+{
+    "name":"Cristiano Ronaldo",
+    "username":"ronaldo",
+    "phone_number":"0856241",
+    "password":"secret_agent"
+}
+```
+
+Response
+
+```
+{
+    "token": "asd123"
+}
+```
