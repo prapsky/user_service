@@ -23,6 +23,10 @@ Here is the example to create mock:
 
 ```
 mockgen -source=<source_file> -destination=<destination_file>
+
+mockgen -source=service/auth/auth.go -destination=test/mock/service/auth/auth.go
+mockgen -source=service/user/user.go -destination=test/mock/service/user/user.go
+mockgen -source=service/user/register/register.go -destination=test/mock/service/user/register/register.go
 ```
 
 ## migration
@@ -38,4 +42,29 @@ Here is the command to migrate:
 
 ```
 make migrate url="postgres://<db-username>:<db-password>@localhost:5432/<db-name>"
+```
+
+## endpoints
+
+```
+POST - /register
+```
+
+Request body
+
+```
+{
+    "name":"Cristiano Ronaldo",
+    "username":"ronaldo",
+    "phone_number":"0856241",
+    "password":"secret_agent"
+}
+```
+
+Response
+
+```
+{
+    "token": "asd123"
+}
 ```
