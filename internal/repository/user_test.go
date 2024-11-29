@@ -12,7 +12,7 @@ import (
 	"github.com/prapsky/user_service/internal/repository"
 	"github.com/prapsky/user_service/test/helpers"
 
-	"github.com/DATA-DOG/go-sqlmock"
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/prapsky/user_service/common/logger/zerolog"
 	"github.com/stretchr/testify/suite"
 )

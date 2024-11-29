@@ -4,7 +4,7 @@ import (
 	goerrors "errors"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	echo "github.com/labstack/echo/v4"
 	"github.com/prapsky/user_service/common/errors"
 	"github.com/prapsky/user_service/common/response"
 	service_user_register "github.com/prapsky/user_service/service/user/register"
