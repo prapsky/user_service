@@ -38,12 +38,12 @@ type RegisterUserInput struct {
 }
 
 func (svc RegisterUserService) Do(ctx context.Context, input RegisterUserInput) (string, error) {
-	existingUserID, uerr := svc.repo.FindByUsername(ctx, input.Username)
+	existingUser, uerr := svc.repo.FindByUsername(ctx, input.Username)
 	if uerr != nil {
 		return "", uerr
 	}
 
-	if existingUserID != 0 {
+	if existingUser != nil {
 		return "", errors.ErrUsernameAlreadyExists
 	}
 

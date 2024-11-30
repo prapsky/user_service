@@ -8,5 +8,5 @@ import (
 
 type UserRepository interface {
 	Insert(ctx context.Context, user *entity.User) (uint64, error)
-	FindByUsername(ctx context.Context, username string) (uint64, error)
+	FindByUsername(ctx context.Context, username string) (*entity.User, error)
 }

@@ -19,7 +19,7 @@ func NewFindByUsernameQueryBuilder(username string) FindByUsernameQueryBuilder {
 func (qb FindByUsernameQueryBuilder) Build() query_bulder.Result {
 	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
-	builder := sq.Select(consts.IDColumn).
+	builder := sq.Select(consts.IDColumn, consts.NameColumn, consts.PhoneNumberColumn, consts.PasswordHashColumn).
 		From(consts.TableName).
 		Where(squirrel.Eq{consts.UsernameColumn: qb.username}).Limit(1)
 

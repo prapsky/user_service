@@ -13,6 +13,7 @@ import (
 	handler_user "github.com/prapsky/user_service/internal/handler/user"
 	repository "github.com/prapsky/user_service/internal/repository"
 	service_auth "github.com/prapsky/user_service/service/auth"
+	service_user_login "github.com/prapsky/user_service/service/user/login"
 	service_user_register "github.com/prapsky/user_service/service/user/register"
 )
 
@@ -36,11 +37,14 @@ func main() {
 		PrivateKey: cfg.Auth.PrivateKey,
 		PublicKey:  cfg.Auth.PublicKey,
 	})
-	userService := service_user_register.NewRegisterUserService(userRepo, authService, logger)
-	userHandler := handler_user.NewRegisterUserHandler(&userService)
+	userRegisterService := service_user_register.NewRegisterUserService(userRepo, authService, logger)
+	userRegisterHandler := handler_user.NewRegisterUserHandler(&userRegisterService)
+	userLoginService := service_user_login.NewLoginUserService(userRepo, authService, logger)
+	userLoginHandler := handler_user.NewLoginUserHandler(&userLoginService)
 
 	e := echo.New()
-	e.POST("/register", userHandler.Register)
+	e.POST("/register", userRegisterHandler.Register)
+	e.POST("/login", userLoginHandler.Login)
 	e.Logger.Fatal(e.Start(":6666"))
 }
 func buildConfig(env string) *config.Config {

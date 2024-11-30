@@ -33,22 +33,25 @@ func (r *User) Insert(ctx context.Context, user *entity.User) (uint64, error) {
 	return userID, nil
 }
 
-func (r *User) FindByUsername(ctx context.Context, username string) (uint64, error) {
+func (r *User) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
 	builder := queryBuilder.NewFindByUsernameQueryBuilder(username).Build()
 
 	row := r.db.QueryRowContext(ctx, builder.Syntax, builder.Params...)
-	userID := uint64(0)
+	var user entity.User
 	err := row.Scan(
-		&userID,
+		&user.ID,
+		&user.Name,
+		&user.PhoneNumber,
+		&user.Password,
 	)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, nil
+			return nil, nil
 		}
 
-		return 0, err
+		return nil, err
 	}
 
-	return userID, nil
+	return &user, nil
 }
