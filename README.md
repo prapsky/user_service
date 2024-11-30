@@ -30,7 +30,7 @@ mockgen -source=service/user/register/register.go -destination=test/mock/service
 mockgen -source=service/user/login/login.go -destination=test/mock/service/user/login/login.go
 ```
 
-## migration
+## Migration
 
 Ensure that you're alredy install golang-migrate.
 Here is the command to create a migration file:
@@ -45,7 +45,7 @@ Here is the command to migrate:
 make migrate url="postgres://<db-username>:<db-password>@localhost:5432/<db-name>"
 ```
 
-## endpoints
+## Endpoints
 
 ```
 POST - /register
@@ -58,6 +58,27 @@ Request body
     "name":"Cristiano Ronaldo",
     "username":"ronaldo",
     "phone_number":"0856241",
+    "password":"secret_agent"
+}
+```
+
+Response
+
+```
+{
+    "token": "asd123"
+}
+```
+
+```
+POST - /login
+```
+
+Request body
+
+```
+{
+    "username":"ronaldo",
     "password":"secret_agent"
 }
 ```

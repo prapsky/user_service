@@ -44,7 +44,7 @@ func main() {
 
 	e := echo.New()
 	e.POST("/register", userRegisterHandler.Register)
-	e.GET("/login", userLoginHandler.Login)
+	e.POST("/login", userLoginHandler.Login)
 	e.Logger.Fatal(e.Start(":6666"))
 }
 func buildConfig(env string) *config.Config {
