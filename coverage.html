@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>config: Go Coverage Report</title>
+		<title>api: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,17 +55,41 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/prapsky/user_service/common/config/config.go (0.0%)</option>
+				<option value="file0">github.com/prapsky/user_service/cmd/api/main.go (0.0%)</option>
 				
-				<option value="file1">github.com/prapsky/user_service/common/logger/zerolog/zerolog.go (91.3%)</option>
+				<option value="file1">github.com/prapsky/user_service/common/config/config.go (0.0%)</option>
 				
-				<option value="file2">github.com/prapsky/user_service/common/utils/hash.go (0.0%)</option>
+				<option value="file2">github.com/prapsky/user_service/common/logger/zerolog/zerolog.go (91.3%)</option>
 				
-				<option value="file3">github.com/prapsky/user_service/internal/repository/query_builder/user/insert.go (100.0%)</option>
+				<option value="file3">github.com/prapsky/user_service/common/response/response.go (0.0%)</option>
 				
-				<option value="file4">github.com/prapsky/user_service/internal/repository/user.go (100.0%)</option>
+				<option value="file4">github.com/prapsky/user_service/common/utils/hash.go (100.0%)</option>
 				
-				<option value="file5">github.com/prapsky/user_service/test/helpers/subreporter.go (66.7%)</option>
+				<option value="file5">github.com/prapsky/user_service/internal/handler/user/login.go (0.0%)</option>
+				
+				<option value="file6">github.com/prapsky/user_service/internal/handler/user/register.go (0.0%)</option>
+				
+				<option value="file7">github.com/prapsky/user_service/internal/repository/query_builder/user/find_by_username.go (100.0%)</option>
+				
+				<option value="file8">github.com/prapsky/user_service/internal/repository/query_builder/user/insert.go (100.0%)</option>
+				
+				<option value="file9">github.com/prapsky/user_service/internal/repository/user.go (93.8%)</option>
+				
+				<option value="file10">github.com/prapsky/user_service/service/auth/auth.go (0.0%)</option>
+				
+				<option value="file11">github.com/prapsky/user_service/service/user/login/login.go (83.3%)</option>
+				
+				<option value="file12">github.com/prapsky/user_service/service/user/register/register.go (26.1%)</option>
+				
+				<option value="file13">github.com/prapsky/user_service/test/helpers/subreporter.go (66.7%)</option>
+				
+				<option value="file14">github.com/prapsky/user_service/test/mock/service/auth/auth.go (61.1%)</option>
+				
+				<option value="file15">github.com/prapsky/user_service/test/mock/service/user/login/login.go (0.0%)</option>
+				
+				<option value="file16">github.com/prapsky/user_service/test/mock/service/user/register/register.go (0.0%)</option>
+				
+				<option value="file17">github.com/prapsky/user_service/test/mock/service/user/user.go (61.1%)</option>
 				
 				</select>
 			</div>
@@ -88,7 +112,86 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package config
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "database/sql"
+        "fmt"
+
+        _ "github.com/lib/pq"
+
+        "github.com/indrasaputra/hashids"
+        "github.com/labstack/echo/v4"
+        "github.com/prapsky/user_service/common/config"
+        "github.com/prapsky/user_service/common/logger/zerolog"
+        handler_user "github.com/prapsky/user_service/internal/handler/user"
+        repository "github.com/prapsky/user_service/internal/repository"
+        service_auth "github.com/prapsky/user_service/service/auth"
+        service_user_login "github.com/prapsky/user_service/service/user/login"
+        service_user_register "github.com/prapsky/user_service/service/user/register"
+)
+
+const (
+        dbDriver = "postgres"
+)
+
+func main() <span class="cov0" title="0">{
+        cfg := buildConfig(".env")
+        db := buildDB(cfg)
+        defer db.Close()
+
+        hash, err := hashids.NewHashID(uint(cfg.HashIDMinLength), cfg.HashIDSalt)
+        checkError(err)
+        hashids.SetHasher(hash)
+
+        logger := zerolog.NewZeroLog()
+
+        userRepo := repository.NewUser(db, logger)
+        authService := service_auth.NewJwtAuthService(service_auth.JwtAuthServiceOptions{
+                PrivateKey: cfg.Auth.PrivateKey,
+                PublicKey:  cfg.Auth.PublicKey,
+        })
+        userRegisterService := service_user_register.NewRegisterUserService(userRepo, authService, logger)
+        userRegisterHandler := handler_user.NewRegisterUserHandler(&amp;userRegisterService)
+        userLoginService := service_user_login.NewLoginUserService(userRepo, authService, logger)
+        userLoginHandler := handler_user.NewLoginUserHandler(&amp;userLoginService)
+
+        e := echo.New()
+        e.POST("/register", userRegisterHandler.Register)
+        e.GET("/login", userLoginHandler.Login)
+        e.Logger.Fatal(e.Start(":6666"))
+}</span>
+func buildConfig(env string) *config.Config <span class="cov0" title="0">{
+        cfg, err := config.NewConfig(env)
+        checkError(err)
+        return cfg
+}</span>
+
+func buildDB(cfg *config.Config) *sql.DB <span class="cov0" title="0">{
+        sqlCfg := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+                cfg.Database.Host,
+                cfg.Database.Port,
+                cfg.Database.Username,
+                cfg.Database.Password,
+                cfg.Database.Name)
+
+        db, err := sql.Open(dbDriver, sqlCfg)
+        checkError(err)
+
+        db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+        db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+
+        return db
+}</span>
+
+func checkError(err error) <span class="cov0" title="0">{
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package config
 
 import (
         "github.com/joeshaw/envdecode"
@@ -132,7 +235,7 @@ func NewConfig(env string) (*Config, error) <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package zerolog
+		<pre class="file" id="file2" style="display: none">package zerolog
 
 import (
         "context"
@@ -218,19 +321,219 @@ func (z Zerolog) withContext(ctx context.Context) Zerolog <span class="cov7" tit
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package utils
+		<pre class="file" id="file3" style="display: none">package response
+
+type Success struct {
+        Message string `json:"message"`
+}
+
+type Error struct {
+        Error string `json:"error"`
+}
+
+func NewSuccess(message string) *Success <span class="cov0" title="0">{
+        return &amp;Success{
+                Message: message,
+        }
+}</span>
+
+func NewError(err error) *Error <span class="cov0" title="0">{
+        return &amp;Error{
+                Error: err.Error(),
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package utils
 
 import (
         "golang.org/x/crypto/bcrypt"
 )
 
-func HashPassword(password string) (string, error) <span class="cov0" title="0">{
+func HashPassword(password string) (string, error) <span class="cov10" title="2">{
         hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
         return string(hashed), err
 }</span>
+
+func ComparePasswords(hashedPassword, password string) error <span class="cov10" title="2">{
+        return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}</span>
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package user
+		<pre class="file" id="file5" style="display: none">package handler_user
+
+import (
+        goerrors "errors"
+        "net/http"
+
+        echo "github.com/labstack/echo/v4"
+        "github.com/prapsky/user_service/common/errors"
+        "github.com/prapsky/user_service/common/response"
+        service_user_login "github.com/prapsky/user_service/service/user/login"
+)
+
+type LoginUserHandler struct {
+        service *service_user_login.LoginUserService
+}
+
+func NewLoginUserHandler(service *service_user_login.LoginUserService) *LoginUserHandler <span class="cov0" title="0">{
+        return &amp;LoginUserHandler{
+                service: service,
+        }
+}</span>
+
+type LoginUserRequest struct {
+        Username string `json:"username"`
+        Password string `json:"password"`
+}
+
+func (r LoginUserRequest) LoginInput() service_user_login.LoginUserInput <span class="cov0" title="0">{
+        return service_user_login.LoginUserInput{
+                Username: r.Username,
+                Password: r.Password,
+        }
+}</span>
+
+func (h *LoginUserHandler) Login(ctx echo.Context) error <span class="cov0" title="0">{
+        request := new(LoginUserRequest)
+        if rerr := ctx.Bind(request); rerr != nil </span><span class="cov0" title="0">{
+                return ctx.JSON(http.StatusBadRequest, response.NewError(errors.ErrInvalidRequest))
+        }</span>
+
+        <span class="cov0" title="0">loginInput := request.LoginInput()
+        token, err := h.service.Do(ctx.Request().Context(), loginInput)
+        if err != nil </span><span class="cov0" title="0">{
+                res := response.NewError(err)
+                if goerrors.Is(err, errors.ErrAccountNotRegistered) </span><span class="cov0" title="0">{
+                        return ctx.JSON(http.StatusBadRequest, res)
+                }</span>
+
+                <span class="cov0" title="0">if goerrors.Is(err, errors.ErrIncorrectPassword) </span><span class="cov0" title="0">{
+                        return ctx.JSON(http.StatusBadRequest, res)
+                }</span>
+
+                <span class="cov0" title="0">res = response.NewError(errors.ErrInternalServerError)
+                return ctx.JSON(http.StatusInternalServerError, res)</span>
+        }
+
+        <span class="cov0" title="0">response := SuccessLoginResponse(token)
+        return ctx.JSON(http.StatusOK, response)</span>
+}
+
+type LoginResponse struct {
+        Token string `json:"token"`
+}
+
+func SuccessLoginResponse(token string) LoginResponse <span class="cov0" title="0">{
+        return LoginResponse{
+                Token: token,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package handler_user
+
+import (
+        goerrors "errors"
+        "net/http"
+
+        echo "github.com/labstack/echo/v4"
+        "github.com/prapsky/user_service/common/errors"
+        "github.com/prapsky/user_service/common/response"
+        service_user_register "github.com/prapsky/user_service/service/user/register"
+)
+
+type RegisterUserHandler struct {
+        service *service_user_register.RegisterUserService
+}
+
+func NewRegisterUserHandler(service *service_user_register.RegisterUserService) *RegisterUserHandler <span class="cov0" title="0">{
+        return &amp;RegisterUserHandler{
+                service: service,
+        }
+}</span>
+
+type RegisterUserRequest struct {
+        Name        string `json:"name"`
+        PhoneNumber string `json:"phone_number"`
+        Username    string `json:"username"`
+        Password    string `json:"password"`
+}
+
+func (r RegisterUserRequest) registerInput() service_user_register.RegisterUserInput <span class="cov0" title="0">{
+        return service_user_register.RegisterUserInput{
+                Name:        r.Name,
+                PhoneNumber: r.PhoneNumber,
+                Username:    r.Username,
+                Password:    r.Password,
+        }
+}</span>
+
+func (h *RegisterUserHandler) Register(ctx echo.Context) error <span class="cov0" title="0">{
+        request := new(RegisterUserRequest)
+        if rerr := ctx.Bind(request); rerr != nil </span><span class="cov0" title="0">{
+                return ctx.JSON(http.StatusBadRequest, response.NewError(errors.ErrInvalidRequest))
+        }</span>
+
+        <span class="cov0" title="0">registerInput := request.registerInput()
+        token, err := h.service.Do(ctx.Request().Context(), registerInput)
+        if err != nil </span><span class="cov0" title="0">{
+                res := response.NewError(err)
+                if goerrors.Is(err, errors.ErrUsernameAlreadyExists) </span><span class="cov0" title="0">{
+                        return ctx.JSON(http.StatusConflict, res)
+                }</span>
+
+                <span class="cov0" title="0">res = response.NewError(errors.ErrInternalServerError)
+                return ctx.JSON(http.StatusInternalServerError, res)</span>
+        }
+
+        <span class="cov0" title="0">response := SuccessResponse(token)
+        return ctx.JSON(http.StatusCreated, response)</span>
+}
+
+type RegisterResponse struct {
+        Token string `json:"token"`
+}
+
+func SuccessResponse(token string) RegisterResponse <span class="cov0" title="0">{
+        return RegisterResponse{
+                Token: token,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package user
+
+import (
+        "github.com/Masterminds/squirrel"
+        consts "github.com/prapsky/user_service/internal/repository/consts/user"
+        query_bulder "github.com/prapsky/user_service/internal/repository/query_builder"
+)
+
+type FindByUsernameQueryBuilder struct {
+        username string
+}
+
+func NewFindByUsernameQueryBuilder(username string) FindByUsernameQueryBuilder <span class="cov8" title="1">{
+        return FindByUsernameQueryBuilder{
+                username: username,
+        }
+}</span>
+
+func (qb FindByUsernameQueryBuilder) Build() query_bulder.Result <span class="cov8" title="1">{
+        sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+
+        builder := sq.Select(consts.IDColumn, consts.NameColumn, consts.PhoneNumberColumn, consts.PasswordHashColumn).
+                From(consts.TableName).
+                Where(squirrel.Eq{consts.UsernameColumn: qb.username}).Limit(1)
+
+        sql, params, _ := builder.ToSql()
+
+        return query_bulder.Result{Syntax: sql, Params: params}
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package user
 
 import (
         "github.com/Masterminds/squirrel"
@@ -266,7 +569,7 @@ func (qb InsertQueryBuilder) Build() query_bulder.Result <span class="cov8" titl
 }</span>
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package repository
+		<pre class="file" id="file9" style="display: none">package repository
 
 import (
         "context"
@@ -282,14 +585,14 @@ type User struct {
         log zerolog.Zerolog
 }
 
-func NewUser(db *sql.DB, log zerolog.Zerolog) *User <span class="cov10" title="2">{
+func NewUser(db *sql.DB, log zerolog.Zerolog) *User <span class="cov10" title="3">{
         return &amp;User{
                 db:  db,
                 log: log.WithRepositoryName("User"),
         }
 }</span>
 
-func (r *User) Insert(ctx context.Context, user *entity.User) (uint64, error) <span class="cov10" title="2">{
+func (r *User) Insert(ctx context.Context, user *entity.User) (uint64, error) <span class="cov6" title="2">{
         query := queryBuilder.NewInsertQueryBuilder(user).Build()
 
         userID := uint64(0)
@@ -300,9 +603,294 @@ func (r *User) Insert(ctx context.Context, user *entity.User) (uint64, error) <s
 
         <span class="cov1" title="1">return userID, nil</span>
 }
+
+func (r *User) FindByUsername(ctx context.Context, username string) (*entity.User, error) <span class="cov10" title="3">{
+        builder := queryBuilder.NewFindByUsernameQueryBuilder(username).Build()
+
+        row := r.db.QueryRowContext(ctx, builder.Syntax, builder.Params...)
+        var user entity.User
+        err := row.Scan(
+                &amp;user.ID,
+                &amp;user.Name,
+                &amp;user.PhoneNumber,
+                &amp;user.Password,
+        )
+
+        if err != nil </span><span class="cov6" title="2">{
+                if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                        return nil, nil
+                }</span>
+
+                <span class="cov6" title="2">return nil, err</span>
+        }
+
+        <span class="cov1" title="1">return &amp;user, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package helpers
+		<pre class="file" id="file10" style="display: none">package service_auth
+
+import (
+        "crypto/rsa"
+        "strconv"
+        "time"
+
+        jwt "github.com/golang-jwt/jwt/v5"
+
+        "github.com/prapsky/user_service/common/errors"
+        "github.com/prapsky/user_service/entity"
+)
+
+type JwtAuthService struct {
+        privateKey *rsa.PrivateKey
+        publicKey  *rsa.PublicKey
+}
+
+type JwtAuthServiceOptions struct {
+        PrivateKey string
+        PublicKey  string
+}
+
+type AuthService interface {
+        CreateToken(user *entity.User) (string, error)
+        ValidateToken(token string) (uint64, error)
+}
+
+func NewJwtAuthService(opts JwtAuthServiceOptions) *JwtAuthService <span class="cov0" title="0">{
+        pem, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(opts.PrivateKey))
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov0" title="0">cert, err := jwt.ParseRSAPublicKeyFromPEM([]byte(opts.PublicKey))
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov0" title="0">return &amp;JwtAuthService{
+                privateKey: pem,
+                publicKey:  cert,
+        }</span>
+}
+
+func (s *JwtAuthService) CreateToken(user *entity.User) (string, error) <span class="cov0" title="0">{
+        now := time.Now()
+        claims := jwt.MapClaims{
+                "sub":  strconv.FormatInt(int64(user.ID), 10),
+                "name": user.Username,
+                "iat":  now.Unix(),
+                "exp":  now.Add(time.Hour * 1).Unix(),
+        }
+
+        token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+        signedToken, err := token.SignedString(s.privateKey)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov0" title="0">return signedToken, nil</span>
+}
+
+func (s *JwtAuthService) ValidateToken(token string) (uint64, error) <span class="cov0" title="0">{
+        jt, err := s.parseToken(token)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov0" title="0">if jt == nil </span><span class="cov0" title="0">{
+                return 0, errors.ErrInvalidToken
+        }</span>
+
+        <span class="cov0" title="0">if !jt.Valid </span><span class="cov0" title="0">{
+                return 0, errors.ErrInvalidToken
+        }</span>
+
+        <span class="cov0" title="0">return s.getClaim(jt)</span>
+}
+
+func (s *JwtAuthService) parseToken(token string) (*jwt.Token, error) <span class="cov0" title="0">{
+        jt, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) </span><span class="cov0" title="0">{
+                if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok </span><span class="cov0" title="0">{
+                        return nil, errors.ErrUnexpectedSigning
+                }</span>
+
+                <span class="cov0" title="0">return s.publicKey, nil</span>
+        })
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.ErrInvalidToken
+        }</span>
+
+        <span class="cov0" title="0">return jt, nil</span>
+}
+
+func (s *JwtAuthService) getClaim(jt *jwt.Token) (uint64, error) <span class="cov0" title="0">{
+        id := uint64(0)
+        claims, ok := jt.Claims.(jwt.MapClaims)
+        if !ok </span><span class="cov0" title="0">{
+                return 0, errors.ErrInvalidToken
+        }</span>
+
+        <span class="cov0" title="0">sub, ok := claims["sub"].(string)
+        if !ok </span><span class="cov0" title="0">{
+                return 0, errors.ErrInvalidToken
+        }</span>
+
+        <span class="cov0" title="0">id, err := strconv.ParseUint(sub, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, errors.ErrInvalidToken
+        }</span>
+
+        <span class="cov0" title="0">return id, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package service_user_login
+
+import (
+        "context"
+
+        "github.com/prapsky/user_service/common/errors"
+        "github.com/prapsky/user_service/common/logger/zerolog"
+        "github.com/prapsky/user_service/common/utils"
+        auth_svc "github.com/prapsky/user_service/service/auth"
+        user_svc "github.com/prapsky/user_service/service/user"
+)
+
+type LoginUserUseCase interface {
+        Do(ctx context.Context, input LoginUserInput) (string, error)
+}
+
+type LoginUserService struct {
+        repo    user_svc.UserRepository
+        authSvc auth_svc.AuthService
+        log     zerolog.Zerolog
+}
+
+func NewLoginUserService(repo user_svc.UserRepository,
+        authSvc auth_svc.AuthService,
+        log zerolog.Zerolog) LoginUserService <span class="cov6" title="2">{
+        return LoginUserService{repo: repo,
+                authSvc: authSvc,
+                log:     log.WithServiceName("LoginUserService")}
+}</span>
+
+type LoginUserInput struct {
+        Username string
+        Password string
+}
+
+func (svc LoginUserService) Do(ctx context.Context, input LoginUserInput) (string, error) <span class="cov10" title="3">{
+        user, uerr := svc.repo.FindByUsername(ctx, input.Username)
+        if uerr != nil </span><span class="cov1" title="1">{
+                return "", uerr
+        }</span>
+
+        <span class="cov6" title="2">if user == nil </span><span class="cov0" title="0">{
+                return "", errors.ErrAccountNotRegistered
+        }</span>
+
+        <span class="cov6" title="2">if cerr := utils.ComparePasswords(user.Password, input.Password); cerr != nil </span><span class="cov1" title="1">{
+                return "", errors.ErrIncorrectPassword
+        }</span>
+
+        <span class="cov1" title="1">token, err := svc.authSvc.CreateToken(user)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov1" title="1">return token, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package service_user_register
+
+import (
+        "context"
+        "time"
+
+        "github.com/prapsky/user_service/common/errors"
+        "github.com/prapsky/user_service/common/logger/zerolog"
+        "github.com/prapsky/user_service/common/utils"
+        "github.com/prapsky/user_service/entity"
+        auth_svc "github.com/prapsky/user_service/service/auth"
+        user_svc "github.com/prapsky/user_service/service/user"
+)
+
+type RegisterUserUseCase interface {
+        Do(ctx context.Context, input RegisterUserInput) (string, error)
+}
+
+type RegisterUserService struct {
+        repo    user_svc.UserRepository
+        authSvc auth_svc.AuthService
+        log     zerolog.Zerolog
+}
+
+func NewRegisterUserService(repo user_svc.UserRepository,
+        authSvc auth_svc.AuthService,
+        log zerolog.Zerolog) RegisterUserService <span class="cov10" title="2">{
+        return RegisterUserService{repo: repo,
+                authSvc: authSvc,
+                log:     log.WithServiceName("RegisterUserService")}
+}</span>
+
+type RegisterUserInput struct {
+        Name        string
+        PhoneNumber string
+        Username    string
+        Password    string
+}
+
+func (svc RegisterUserService) Do(ctx context.Context, input RegisterUserInput) (string, error) <span class="cov10" title="2">{
+        existingUser, uerr := svc.repo.FindByUsername(ctx, input.Username)
+        if uerr != nil </span><span class="cov1" title="1">{
+                return "", uerr
+        }</span>
+
+        <span class="cov1" title="1">if existingUser != nil </span><span class="cov1" title="1">{
+                return "", errors.ErrUsernameAlreadyExists
+        }</span>
+
+        <span class="cov0" title="0">user, uerr := EntityUser(input)
+        if uerr != nil </span><span class="cov0" title="0">{
+                return "", uerr
+        }</span>
+
+        <span class="cov0" title="0">userID, err := svc.repo.Insert(ctx, user)
+        if err != nil </span><span class="cov0" title="0">{
+                svc.log.WarnfWithContext(ctx, err, "Error insert user")
+                return "", err
+        }</span>
+
+        <span class="cov0" title="0">user.ID = userID
+        token, err := svc.authSvc.CreateToken(user)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov0" title="0">return token, nil</span>
+}
+
+func EntityUser(input RegisterUserInput) (*entity.User, error) <span class="cov0" title="0">{
+        hashedPassword, err := utils.HashPassword(input.Password)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">now := time.Now()
+        return &amp;entity.User{
+                Name:        input.Name,
+                PhoneNumber: input.PhoneNumber,
+                Username:    input.Username,
+                Password:    hashedPassword,
+                CreatedAt:   now,
+                UpdatedAt:   now,
+        }, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package helpers
 
 import (
         "github.com/golang/mock/gomock"
@@ -314,14 +902,14 @@ type SubReporter struct {
 }
 
 // NewSubReporter creates instance of SubReporter
-func NewSubReporter(t gomock.TestReporter) *SubReporter <span class="cov10" title="2">{
+func NewSubReporter(t gomock.TestReporter) *SubReporter <span class="cov8" title="3">{
         return &amp;SubReporter{t: []gomock.TestReporter{t}}
 }</span>
 
 // Add is responsible for add subtest
-func (s *SubReporter) Add(t gomock.TestReporter) func() <span class="cov1" title="1">{
+func (s *SubReporter) Add(t gomock.TestReporter) func() <span class="cov10" title="4">{
         s.t = append(s.t, t)
-        return func() </span><span class="cov1" title="1">{
+        return func() </span><span class="cov10" title="4">{
                 s.t = s.t[:len(s.t)-1]
         }</span>
 }
@@ -334,6 +922,247 @@ func (s *SubReporter) Errorf(format string, args ...interface{}) <span class="co
 // Fatalf returns fatal of SubReporter
 func (s *SubReporter) Fatalf(format string, args ...interface{}) <span class="cov0" title="0">{
         s.t[len(s.t)-1].Fatalf(format, args...)
+}</span>
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: service/auth/auth.go
+
+// Package mock_service_auth is a generated GoMock package.
+package mock_service_auth
+
+import (
+        reflect "reflect"
+
+        gomock "github.com/golang/mock/gomock"
+        entity "github.com/prapsky/user_service/entity"
+)
+
+// MockAuthService is a mock of AuthService interface.
+type MockAuthService struct {
+        ctrl     *gomock.Controller
+        recorder *MockAuthServiceMockRecorder
+}
+
+// MockAuthServiceMockRecorder is the mock recorder for MockAuthService.
+type MockAuthServiceMockRecorder struct {
+        mock *MockAuthService
+}
+
+// NewMockAuthService creates a new mock instance.
+func NewMockAuthService(ctrl *gomock.Controller) *MockAuthService <span class="cov10" title="4">{
+        mock := &amp;MockAuthService{ctrl: ctrl}
+        mock.recorder = &amp;MockAuthServiceMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockAuthService) EXPECT() *MockAuthServiceMockRecorder <span class="cov1" title="1">{
+        return m.recorder
+}</span>
+
+// CreateToken mocks base method.
+func (m *MockAuthService) CreateToken(user *entity.User) (string, error) <span class="cov1" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "CreateToken", user)
+        ret0, _ := ret[0].(string)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// CreateToken indicates an expected call of CreateToken.
+func (mr *MockAuthServiceMockRecorder) CreateToken(user interface{}) *gomock.Call <span class="cov1" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateToken", reflect.TypeOf((*MockAuthService)(nil).CreateToken), user)
+}</span>
+
+// ValidateToken mocks base method.
+func (m *MockAuthService) ValidateToken(token string) (uint64, error) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "ValidateToken", token)
+        ret0, _ := ret[0].(uint64)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// ValidateToken indicates an expected call of ValidateToken.
+func (mr *MockAuthServiceMockRecorder) ValidateToken(token interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateToken", reflect.TypeOf((*MockAuthService)(nil).ValidateToken), token)
+}</span>
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: service/user/login/login.go
+
+// Package mock_service_user_login is a generated GoMock package.
+package mock_service_user_login
+
+import (
+        context "context"
+        reflect "reflect"
+
+        gomock "github.com/golang/mock/gomock"
+        service_user_login "github.com/prapsky/user_service/service/user/login"
+)
+
+// MockLoginUserUseCase is a mock of LoginUserUseCase interface.
+type MockLoginUserUseCase struct {
+        ctrl     *gomock.Controller
+        recorder *MockLoginUserUseCaseMockRecorder
+}
+
+// MockLoginUserUseCaseMockRecorder is the mock recorder for MockLoginUserUseCase.
+type MockLoginUserUseCaseMockRecorder struct {
+        mock *MockLoginUserUseCase
+}
+
+// NewMockLoginUserUseCase creates a new mock instance.
+func NewMockLoginUserUseCase(ctrl *gomock.Controller) *MockLoginUserUseCase <span class="cov0" title="0">{
+        mock := &amp;MockLoginUserUseCase{ctrl: ctrl}
+        mock.recorder = &amp;MockLoginUserUseCaseMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockLoginUserUseCase) EXPECT() *MockLoginUserUseCaseMockRecorder <span class="cov0" title="0">{
+        return m.recorder
+}</span>
+
+// Do mocks base method.
+func (m *MockLoginUserUseCase) Do(ctx context.Context, input service_user_login.LoginUserInput) (string, error) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Do", ctx, input)
+        ret0, _ := ret[0].(string)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// Do indicates an expected call of Do.
+func (mr *MockLoginUserUseCaseMockRecorder) Do(ctx, input interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockLoginUserUseCase)(nil).Do), ctx, input)
+}</span>
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: service/user/register/register.go
+
+// Package mock_service_user_register is a generated GoMock package.
+package mock_service_user_register
+
+import (
+        context "context"
+        reflect "reflect"
+
+        gomock "github.com/golang/mock/gomock"
+        service_user_register "github.com/prapsky/user_service/service/user/register"
+)
+
+// MockRegisterUserUseCase is a mock of RegisterUserUseCase interface.
+type MockRegisterUserUseCase struct {
+        ctrl     *gomock.Controller
+        recorder *MockRegisterUserUseCaseMockRecorder
+}
+
+// MockRegisterUserUseCaseMockRecorder is the mock recorder for MockRegisterUserUseCase.
+type MockRegisterUserUseCaseMockRecorder struct {
+        mock *MockRegisterUserUseCase
+}
+
+// NewMockRegisterUserUseCase creates a new mock instance.
+func NewMockRegisterUserUseCase(ctrl *gomock.Controller) *MockRegisterUserUseCase <span class="cov0" title="0">{
+        mock := &amp;MockRegisterUserUseCase{ctrl: ctrl}
+        mock.recorder = &amp;MockRegisterUserUseCaseMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRegisterUserUseCase) EXPECT() *MockRegisterUserUseCaseMockRecorder <span class="cov0" title="0">{
+        return m.recorder
+}</span>
+
+// Do mocks base method.
+func (m *MockRegisterUserUseCase) Do(ctx context.Context, input service_user_register.RegisterUserInput) (string, error) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Do", ctx, input)
+        ret0, _ := ret[0].(string)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// Do indicates an expected call of Do.
+func (mr *MockRegisterUserUseCaseMockRecorder) Do(ctx, input interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockRegisterUserUseCase)(nil).Do), ctx, input)
+}</span>
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: service/user/user.go
+
+// Package mock_service_user is a generated GoMock package.
+package mock_service_user
+
+import (
+        context "context"
+        reflect "reflect"
+
+        gomock "github.com/golang/mock/gomock"
+        entity "github.com/prapsky/user_service/entity"
+)
+
+// MockUserRepository is a mock of UserRepository interface.
+type MockUserRepository struct {
+        ctrl     *gomock.Controller
+        recorder *MockUserRepositoryMockRecorder
+}
+
+// MockUserRepositoryMockRecorder is the mock recorder for MockUserRepository.
+type MockUserRepositoryMockRecorder struct {
+        mock *MockUserRepository
+}
+
+// NewMockUserRepository creates a new mock instance.
+func NewMockUserRepository(ctrl *gomock.Controller) *MockUserRepository <span class="cov8" title="4">{
+        mock := &amp;MockUserRepository{ctrl: ctrl}
+        mock.recorder = &amp;MockUserRepositoryMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder <span class="cov10" title="5">{
+        return m.recorder
+}</span>
+
+// FindByUsername mocks base method.
+func (m *MockUserRepository) FindByUsername(ctx context.Context, username string) (*entity.User, error) <span class="cov10" title="5">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "FindByUsername", ctx, username)
+        ret0, _ := ret[0].(*entity.User)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// FindByUsername indicates an expected call of FindByUsername.
+func (mr *MockUserRepositoryMockRecorder) FindByUsername(ctx, username interface{}) *gomock.Call <span class="cov10" title="5">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByUsername", reflect.TypeOf((*MockUserRepository)(nil).FindByUsername), ctx, username)
+}</span>
+
+// Insert mocks base method.
+func (m *MockUserRepository) Insert(ctx context.Context, user *entity.User) (uint64, error) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Insert", ctx, user)
+        ret0, _ := ret[0].(uint64)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// Insert indicates an expected call of Insert.
+func (mr *MockUserRepositoryMockRecorder) Insert(ctx, user interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockUserRepository)(nil).Insert), ctx, user)
 }</span>
 </pre>
 		

@@ -36,10 +36,10 @@ func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder {
 }
 
 // FindByUsername mocks base method.
-func (m *MockUserRepository) FindByUsername(ctx context.Context, username string) (uint64, error) {
+func (m *MockUserRepository) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindByUsername", ctx, username)
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(*entity.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

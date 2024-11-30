@@ -10,7 +10,7 @@ import (
 
 func TestFindByUsernameQueryBuilder_Build(t *testing.T) {
 	t.Run("return result with expected query syntax and arguments length", func(t *testing.T) {
-		const expectedQuery = "SELECT id " +
+		const expectedQuery = "SELECT id, name, phone_number, password_hash " +
 			"FROM users WHERE username = $1 LIMIT 1"
 		username := "ronaldo"
 

@@ -80,6 +80,54 @@ func (suite *UserRepositoryTestSuite) TestUser_Insert() {
 	})
 }
 
+func (suite *UserRepositoryTestSuite) TestUser_FindByUsername() {
+	const expectedQuery = "SELECT id, name, phone_number, password_hash " +
+		"FROM users WHERE username = $1 LIMIT 1"
+
+	input := createValidUser()
+
+	suite.Run("select query returns error", func() {
+		defer suite.subReporter.Add(suite.T())()
+
+		suite.mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+			WithArgs(input.Username).
+			WillReturnError(sql.ErrConnDone)
+
+		result, err := suite.repo.FindByUsername(context.TODO(), input.Username)
+
+		suite.NotNil(err)
+		suite.Nil(result)
+	})
+
+	suite.Run("scan row error", func() {
+		defer suite.subReporter.Add(suite.T())()
+
+		suite.mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+			WithArgs(input.Username).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone_number", "password_hash"}).
+				AddRow(input.CreatedAt, input.Name, input.PhoneNumber, input.Password))
+
+		result, err := suite.repo.FindByUsername(context.TODO(), input.Username)
+
+		suite.NotNil(err)
+		suite.Nil(result)
+	})
+
+	suite.Run("successfully query user with given username", func() {
+		defer suite.subReporter.Add(suite.T())()
+
+		suite.mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+			WithArgs(input.Username).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone_number", "password_hash"}).
+				AddRow(input.ID, input.Name, input.PhoneNumber, input.Password))
+
+		result, err := suite.repo.FindByUsername(context.TODO(), input.Username)
+
+		suite.Nil(err)
+		suite.NotNil(result)
+	})
+}
+
 func createValidUser() *entity.User {
 	name := "Cristiano Ronaldo"
 	username := "ronaldo"

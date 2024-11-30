@@ -27,6 +27,7 @@ mockgen -source=<source_file> -destination=<destination_file>
 mockgen -source=service/auth/auth.go -destination=test/mock/service/auth/auth.go
 mockgen -source=service/user/user.go -destination=test/mock/service/user/user.go
 mockgen -source=service/user/register/register.go -destination=test/mock/service/user/register/register.go
+mockgen -source=service/user/login/login.go -destination=test/mock/service/user/login/login.go
 ```
 
 ## migration
