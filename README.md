@@ -28,6 +28,7 @@ mockgen -source=service/auth/auth.go -destination=test/mock/service/auth/auth.go
 mockgen -source=service/user/user.go -destination=test/mock/service/user/user.go
 mockgen -source=service/user/register/register.go -destination=test/mock/service/user/register/register.go
 mockgen -source=service/user/login/login.go -destination=test/mock/service/user/login/login.go
+mockgen -source=service/user/detail/detail.go -destination=test/mock/service/user/detail/detail.go
 ```
 
 ## Migration
