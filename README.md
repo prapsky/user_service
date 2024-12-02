@@ -91,3 +91,21 @@ Response
     "token": "asd123"
 }
 ```
+
+```
+GET - /users/detail
+```
+
+Use token as a authorization
+
+Response
+
+```
+{
+    "data": {
+        "name": "Lionel Messi",
+        "username": "messi",
+        "phone_number": "0856242"
+    }
+}
+```
