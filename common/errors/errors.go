@@ -13,4 +13,5 @@ var (
 	ErrInvalidToken          = errors.New("User token not valid")
 	ErrUnexpectedSigning     = errors.New("Unexpected signing")
 	ErrIncorrectPassword     = errors.New("Incorrect Phone Number or Password")
+	ErrUnauthorizedUser      = errors.New("Unauthorized user")
 )

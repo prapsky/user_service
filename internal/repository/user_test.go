@@ -128,6 +128,40 @@ func (suite *UserRepositoryTestSuite) TestUser_FindByUsername() {
 	})
 }
 
+func (suite *UserRepositoryTestSuite) TestUser_FindByID() {
+	const expectedQuery = "SELECT name, phone_number, username " +
+		"FROM users WHERE id = $1 LIMIT 1"
+
+	input := createValidUser()
+
+	suite.Run("select query returns error", func() {
+		defer suite.subReporter.Add(suite.T())()
+
+		suite.mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+			WithArgs(input.ID).
+			WillReturnError(sql.ErrConnDone)
+
+		result, err := suite.repo.FindByID(context.TODO(), input.ID)
+
+		suite.NotNil(err)
+		suite.Nil(result)
+	})
+
+	suite.Run("successfully query user with given id", func() {
+		defer suite.subReporter.Add(suite.T())()
+
+		suite.mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).
+			WithArgs(input.ID).
+			WillReturnRows(sqlmock.NewRows([]string{"name", "phone_number", "username"}).
+				AddRow(input.Name, input.PhoneNumber, input.Username))
+
+		result, err := suite.repo.FindByID(context.TODO(), input.ID)
+
+		suite.Nil(err)
+		suite.NotNil(result)
+	})
+}
+
 func createValidUser() *entity.User {
 	name := "Cristiano Ronaldo"
 	username := "ronaldo"

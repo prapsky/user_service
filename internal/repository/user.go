@@ -55,3 +55,25 @@ func (r *User) FindByUsername(ctx context.Context, username string) (*entity.Use
 
 	return &user, nil
 }
+
+func (r *User) FindByID(ctx context.Context, id uint64) (*entity.User, error) {
+	builder := queryBuilder.NewFindByIDQueryBuilder(id).Build()
+
+	row := r.db.QueryRowContext(ctx, builder.Syntax, builder.Params...)
+	var user entity.User
+	err := row.Scan(
+		&user.Name,
+		&user.PhoneNumber,
+		&user.Username,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &user, nil
+}
