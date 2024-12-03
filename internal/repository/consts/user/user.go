@@ -10,4 +10,5 @@ const (
 	CreatedAtColumn    = "created_at"
 	UpdatedAtColumn    = "updated_at"
 	DeletedAtColumn    = "deleted_at"
+	Count              = "COUNT(*)"
 )

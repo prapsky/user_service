@@ -6,6 +6,7 @@ import (
 
 	"github.com/prapsky/user_service/common/logger/zerolog"
 	"github.com/prapsky/user_service/entity"
+	params "github.com/prapsky/user_service/entity/params/user/find_all_param"
 	queryBuilder "github.com/prapsky/user_service/internal/repository/query_builder/user"
 )
 
@@ -76,4 +77,36 @@ func (r *User) FindByID(ctx context.Context, id uint64) (*entity.User, error) {
 	}
 
 	return &user, nil
+}
+
+func (r *User) FindAll(ctx context.Context, params params.FindAllUsersParam) ([]*entity.User, error) {
+	builder := queryBuilder.NewFindAllQueryBuilder(params)
+	qb := builder.Build()
+
+	rows, err := r.db.QueryContext(ctx, qb.Syntax, qb.Params...)
+	if err != nil {
+		return []*entity.User{}, err
+	}
+	defer rows.Close()
+
+	users := []*entity.User{}
+	for rows.Next() {
+		user := entity.User{}
+		err := rows.Scan(&user.ID,
+			&user.Name,
+			&user.PhoneNumber,
+			&user.Username,
+			&user.CreatedAt)
+
+		if err != nil {
+			r.log.ErrorfWithContext(ctx, err,
+				"unexpected error while scan find all users ID#%d",
+				user.ID)
+			continue
+		}
+
+		users = append(users, &user)
+	}
+
+	return users, nil
 }

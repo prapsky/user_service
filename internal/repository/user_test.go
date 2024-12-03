@@ -14,6 +14,8 @@ import (
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/prapsky/user_service/common/logger/zerolog"
+	params "github.com/prapsky/user_service/entity/params/user/find_all_param"
+	consts "github.com/prapsky/user_service/internal/repository/consts/user"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -159,6 +161,82 @@ func (suite *UserRepositoryTestSuite) TestUser_FindByID() {
 
 		suite.Nil(err)
 		suite.NotNil(result)
+	})
+}
+
+func (suite *UserRepositoryTestSuite) TestUser_FindAll() {
+	suite.Run("unexpected error raised while query", func() {
+		const (
+			selectQuery = `SELECT id, name, phone_number, username, created_at 
+			FROM users WHERE username ILIKE $1 LIMIT 20`
+			username = "ronaldo"
+		)
+
+		params := params.NewFindAllUsersParam(params.WithUsername(username))
+
+		suite.mock.ExpectQuery(regexp.QuoteMeta(selectQuery)).WillReturnError(sql.ErrConnDone)
+
+		result, err := suite.repo.FindAll(context.TODO(), params)
+		suite.Error(err)
+		suite.ErrorIs(sql.ErrConnDone, err)
+		suite.NotNil(result)
+	})
+
+	suite.Run("success return more users but get unexpected error while scan", func() {
+		const (
+			selectQuery = `SELECT id, name, phone_number, username, created_at 
+			FROM users WHERE username ILIKE $1 LIMIT 20`
+			name        = "Cristiano Ronaldo"
+			phoneNumber = "0856241"
+			username    = "ronaldo"
+		)
+
+		params := params.NewFindAllUsersParam(params.WithUsername(username))
+
+		suite.mock.ExpectQuery(regexp.QuoteMeta(selectQuery)).
+			WillReturnRows(sqlmock.NewRows([]string{consts.IDColumn,
+				consts.NameColumn,
+				consts.PhoneNumberColumn,
+				consts.UsernameColumn,
+				consts.CreatedAtColumn}).
+				AddRow("wrong_id",
+					name,
+					phoneNumber,
+					username,
+					time.Now()))
+
+		result, err := suite.repo.FindAll(context.TODO(), params)
+		suite.Nil(err)
+		suite.Empty(result)
+	})
+
+	suite.Run("success return more users but get unexpected error while scan", func() {
+		const (
+			selectQuery = `SELECT id, name, phone_number, username, created_at 
+			FROM users WHERE username ILIKE $1 LIMIT 20`
+			name        = "Cristiano Ronaldo"
+			phoneNumber = "0856241"
+			username    = "ronaldo"
+			id          = uint64(7)
+		)
+
+		params := params.NewFindAllUsersParam(params.WithUsername(username))
+
+		suite.mock.ExpectQuery(regexp.QuoteMeta(selectQuery)).
+			WillReturnRows(sqlmock.NewRows([]string{consts.IDColumn,
+				consts.NameColumn,
+				consts.PhoneNumberColumn,
+				consts.UsernameColumn,
+				consts.CreatedAtColumn}).
+				AddRow(id,
+					name,
+					phoneNumber,
+					username,
+					time.Now()))
+
+		result, err := suite.repo.FindAll(context.TODO(), params)
+		suite.Nil(err)
+		suite.NotEmpty(result)
 	})
 }
 
